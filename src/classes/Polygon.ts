@@ -2,7 +2,7 @@ import { Point } from '../interfaces';
 
 export class Polygon {
   private points: Point[];
-  private anchor: Point = { x: 0, y: 0 };
+  private anchors: Point[] = [];
   getPoints() {
     return this.points;
   }
@@ -41,8 +41,11 @@ export class Polygon {
     });
   }
 
-  click(x: number, y: number) {
-    this.anchor = { x, y };
+  click() {
+    //set the anchors array equal to each point's current location
+    this.anchors = this.points.map((p) => {
+      return { x: p.x, y: p.y };
+    });
   }
 
   // move(x: number, y: number) {

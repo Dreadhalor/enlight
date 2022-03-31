@@ -16,7 +16,7 @@ export function draw(
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const draw_outlines = false;
+  const draw_outlines = true;
 
   if (draw_outlines) {
     // Draw segments
@@ -40,11 +40,34 @@ export function draw(
     polygons.push(getSightPolygon(Mouse.x + dx, Mouse.y + dy, segments));
   }
 
+  const max_dimension = Math.max(canvas.width, canvas.height);
+  let gradient = ctx.createRadialGradient(
+    Mouse.x,
+    Mouse.y,
+    0,
+    Mouse.x,
+    Mouse.y,
+    max_dimension
+  );
+
+  gradient.addColorStop(0, `rgba(255,255,255,${2 / dots})`);
+  gradient.addColorStop(1, `rgba(255,255,255,0)`);
   // DRAW AS A GIANT POLYGON
   for (var i = 1; i < polygons.length; i++) {
-    drawPolygon(polygons[i], ctx, `rgba(255,255,255,${2 / dots})`);
+    drawPolygon(polygons[i], ctx, gradient);
   }
-  drawPolygon(polygons[0], ctx, '#aaa');
+  gradient = ctx.createRadialGradient(
+    Mouse.x,
+    Mouse.y,
+    0,
+    Mouse.x,
+    Mouse.y,
+    max_dimension
+  );
+  gradient.addColorStop(0, '#aaa');
+  gradient.addColorStop(1, 'black');
+  // drawPolygon(polygons[0], ctx, '#aaa');
+  drawPolygon(polygons[0], ctx, gradient);
 
   const draw_outer_ring = false;
   // Draw red dots
@@ -72,21 +95,25 @@ export function draw(
   //   ctx.fill();
   // }
 
-  ctx.fillStyle = '#dd3838';
-  const point_radius = 5;
-  const selected_point_radius = 10;
-  // for (let point of points) {
-  //   ctx.beginPath();
-  //   let radius = point !== selected_point ? point_radius : selected_point_radius;
-  //   ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI);
-  //   ctx.fill();
-  // }
+  const draw_active_points = true;
+  if (draw_active_points) {
+    ctx.fillStyle = '#dd3838';
+    const point_radius = 5;
+    const selected_point_radius = 10;
+    for (let point of points) {
+      ctx.beginPath();
+      let radius =
+        point !== selected_point ? point_radius : selected_point_radius;
+      ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
 }
 
 function drawPolygon(
   polygon: Point[],
   ctx: CanvasRenderingContext2D,
-  fillStyle: string
+  fillStyle: string | CanvasGradient | CanvasPattern
 ) {
   ctx.fillStyle = fillStyle;
 

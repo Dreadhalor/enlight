@@ -1,3 +1,4 @@
+import { Polygon } from './classes/Polygon';
 import { Point, Segment } from './interfaces';
 
 //subdivide all segments in segments array with all other segments in segments array using the subdivide function
@@ -23,7 +24,12 @@ function filterIdenticalSegments(segments: Segment[]) {
   const result = segments.filter(function (seg, index, self) {
     return (
       self.findIndex(function (t) {
-        return t.a.x == seg.a.x && t.a.y == seg.a.y && t.b.x == seg.b.x && t.b.y == seg.b.y;
+        return (
+          t.a.x == seg.a.x &&
+          t.a.y == seg.a.y &&
+          t.b.x == seg.b.x &&
+          t.b.y == seg.b.y
+        );
       }) == index
     );
   });
@@ -61,7 +67,12 @@ function subdivide(seg1: Segment, seg2: Segment) {
   }
 }
 //define getIntersection
-export function getIntersection(seg1_a: Point, seg1_b: Point, seg2_a: Point, seg2_b: Point) {
+export function getIntersection(
+  seg1_a: Point,
+  seg1_b: Point,
+  seg2_a: Point,
+  seg2_b: Point
+) {
   var x1 = seg1_a.x;
   var y1 = seg1_a.y;
   var x2 = seg1_b.x;
@@ -89,4 +100,30 @@ export function getIntersection(seg1_a: Point, seg1_b: Point, seg2_a: Point, seg
   else {
     return null;
   }
+}
+
+// create a function which determines whether or not a point is inside a polygon
+export function isPointInPolygon(polygon: Polygon, point: Point) {
+  let inside = false;
+  let points = polygon.getPoints();
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    let xi = points[i].x,
+      yi = points[i].y;
+    let xj = points[j].x,
+      yj = points[j].y;
+    let intersect =
+      yi > point.y != yj > point.y &&
+      point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+//create a function which determines whether or not a point is within a radius of another point
+export function isPointInRadius(point: Point, point2: Point, radius: number) {
+  return (
+    Math.sqrt(
+      Math.pow(point.x - point2.x, 2) + Math.pow(point.y - point2.y, 2)
+    ) < radius
+  );
 }
