@@ -62,6 +62,7 @@ export function draw(
     for (var i = 1; i < polygons.length; i++) {
       drawPolygon(polygons[i], ctx, gradient);
     }
+
     gradient = ctx.createRadialGradient(
       mouseover.x,
       mouseover.y,
@@ -95,6 +96,7 @@ export function draw(
   }
 
   if (draw_debug_points) {
+    ctx.fillStyle = 'white';
     for (var i = 0; i < segments.length; i++) {
       var seg = segments[i];
       ctx.beginPath();

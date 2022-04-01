@@ -26,21 +26,6 @@ export class Polygon {
     return segments;
   }
 
-  getPreviewSegments(dx: number, dy: number) {
-    let segments = this.getSegments();
-    return segments.map((s) => {
-      return {
-        a: { x: s.a.x + dx, y: s.a.y + dy },
-        b: { x: s.b.x + dx, y: s.b.y + dy },
-      };
-    });
-  }
-  getPreviewPoints(dx: number, dy: number) {
-    return this.points.map((p) => {
-      return { x: p.x + dx, y: p.y + dy };
-    });
-  }
-
   click() {
     //store each point's current location in the anchors array
     this.points.forEach((p) => {
@@ -64,16 +49,6 @@ export class Polygon {
   getPoint(x: number, y: number) {
     return this.points.find((p) => p.x === x && p.y === y) ?? null;
   }
-
-  show(ctx: CanvasRenderingContext2D) {
-    ctx.beginPath();
-    ctx.moveTo(this.points[0].x, this.points[0].y);
-    for (let i = 1; i < this.points.length; i++) {
-      ctx.lineTo(this.points[i].x, this.points[i].y);
-    }
-    ctx.closePath();
-    ctx.stroke();
-  }
 }
 
 export function createRectangle(center: Point, width: number, height: number) {
@@ -87,17 +62,42 @@ export function createRectangle(center: Point, width: number, height: number) {
 export function createSquare(center: Point, size: number) {
   return createRectangle(center, size, size);
 }
+
 export function createRandomPolygon(center: Point) {
-  //create a random convex polygon with irregular sides centered at the given center point with up to 5 points and a random bounding box between 50 and 200 pixels
-  const numPoints = Math.floor(Math.random() * 3) + 3;
+  //create a random irregular convex polygon
+  //this polygon will have a random number of points between min_points and max_points (inclusive)
+  //each point will have a random distance from the provided center point between min_distance and max_distance (inclusive)
+  //the generated polygon will inevitably not be centered at the provided center point, so we need to move it to the center
+  const min_points = 3,
+    max_points = 5;
+  const min_radius = 50,
+    max_radius = 100;
   const points = [];
+  const numPoints =
+    Math.floor(Math.random() * (max_points - min_points + 1)) + min_points;
   for (let i = 0; i < numPoints; i++) {
     const angle = ((Math.PI * 2) / numPoints) * i;
-    const radius = Math.random() * 50 + 50;
+    const radius = Math.random() * (max_radius - min_radius + 1) + min_radius;
     points.push({
-      x: center.x + Math.cos(angle) * radius,
-      y: center.y + Math.sin(angle) * radius,
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
     });
   }
+
+  //find the center of the polygon
+  let polygon_center = { x: 0, y: 0 };
+  for (let i = 0; i < points.length; i++) {
+    polygon_center.x += points[i].x;
+    polygon_center.y += points[i].y;
+  }
+  polygon_center.x /= points.length;
+  polygon_center.y /= points.length;
+
+  //move the center of the polygon to the input center point
+  for (let i = 0; i < points.length; i++) {
+    points[i].x += center.x - polygon_center.x;
+    points[i].y += center.y - polygon_center.y;
+  }
+
   return new Polygon(points);
 }
