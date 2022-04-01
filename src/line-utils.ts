@@ -120,10 +120,28 @@ export function isPointInPolygon(polygon: Polygon, point: Point) {
 }
 
 //create a function which determines whether or not a point is within a radius of another point
-export function isPointInRadius(point: Point, point2: Point, radius: number) {
+export function isPointInRadius(
+  point: Point | null,
+  point2: Point | null,
+  radius: number
+) {
+  if (!point || !point2) return false;
   return (
     Math.sqrt(
       Math.pow(point.x - point2.x, 2) + Math.pow(point.y - point2.y, 2)
     ) < radius
   );
+}
+
+//create a function which calculates the area of a concave polygon
+export function getArea(polygon: Polygon) {
+  let points = polygon.getPoints();
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    let j = (i + 1) % points.length;
+    area += points[i].x * points[j].y;
+    area -= points[i].y * points[j].x;
+  }
+  area /= 2;
+  return area;
 }

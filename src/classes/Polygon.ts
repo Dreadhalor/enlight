@@ -42,24 +42,25 @@ export class Polygon {
   }
 
   click() {
-    //set the anchors array equal to each point's current location
-    this.anchors = this.points.map((p) => {
-      return { x: p.x, y: p.y };
+    //store each point's current location in the anchors array
+    this.points.forEach((p) => {
+      this.anchors.push({ x: p.x, y: p.y });
+    });
+  }
+  unclick() {
+    //reset the anchors array
+    this.anchors = [];
+  }
+
+  move(x: number, y: number) {
+    if (this.anchors.length === 0) return;
+    //set each point's location to the difference between the mouse location and the anchor points
+    this.points.forEach((p, i) => {
+      p.x = this.anchors[i].x + x;
+      p.y = this.anchors[i].y + y;
     });
   }
 
-  // move(x: number, y: number) {
-  //   this.points.forEach((p) => {
-  //     p.x += dx;
-  //     p.y += dy;
-  //   });
-  // }
-  move(dx: number, dy: number) {
-    this.points.forEach((p) => {
-      p.x += dx;
-      p.y += dy;
-    });
-  }
   getPoint(x: number, y: number) {
     return this.points.find((p) => p.x === x && p.y === y) ?? null;
   }
@@ -85,4 +86,18 @@ export function createRectangle(center: Point, width: number, height: number) {
 }
 export function createSquare(center: Point, size: number) {
   return createRectangle(center, size, size);
+}
+export function createRandomPolygon(center: Point) {
+  //create a random convex polygon with irregular sides centered at the given center point with up to 5 points and a random bounding box between 50 and 200 pixels
+  const numPoints = Math.floor(Math.random() * 3) + 3;
+  const points = [];
+  for (let i = 0; i < numPoints; i++) {
+    const angle = ((Math.PI * 2) / numPoints) * i;
+    const radius = Math.random() * 50 + 50;
+    points.push({
+      x: center.x + Math.cos(angle) * radius,
+      y: center.y + Math.sin(angle) * radius,
+    });
+  }
+  return new Polygon(points);
 }

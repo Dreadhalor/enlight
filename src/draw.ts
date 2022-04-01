@@ -5,9 +5,12 @@ import { getSightPolygon } from './utils';
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
 const ctx = canvas.getContext('2d')!;
 
+export const fuzzyRadius = 10;
+const dots = 25;
+
 export function draw(
   segments: Segment[],
-  Mouse: Point,
+  mouseover: Point,
   points: Point[],
   selected_point: Point | null
 ) {
@@ -16,7 +19,8 @@ export function draw(
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const draw_outlines = true;
+  const draw_outlines = false;
+  const draw_debug_points = false;
 
   if (draw_outlines) {
     // Draw segments
@@ -30,70 +34,75 @@ export function draw(
     }
   }
 
-  // Sight Polygons
-  var fuzzyRadius = 10;
-  let dots = 50;
-  var polygons = [getSightPolygon(Mouse.x, Mouse.y, segments)];
-  for (var angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2) / dots) {
-    var dx = Math.cos(angle) * fuzzyRadius;
-    var dy = Math.sin(angle) * fuzzyRadius;
-    polygons.push(getSightPolygon(Mouse.x + dx, Mouse.y + dy, segments));
-  }
-
-  const max_dimension = Math.max(canvas.width, canvas.height);
-  let gradient = ctx.createRadialGradient(
-    Mouse.x,
-    Mouse.y,
-    0,
-    Mouse.x,
-    Mouse.y,
-    max_dimension
-  );
-
-  gradient.addColorStop(0, `rgba(255,255,255,${2 / dots})`);
-  gradient.addColorStop(1, `rgba(255,255,255,0)`);
-  // DRAW AS A GIANT POLYGON
-  for (var i = 1; i < polygons.length; i++) {
-    drawPolygon(polygons[i], ctx, gradient);
-  }
-  gradient = ctx.createRadialGradient(
-    Mouse.x,
-    Mouse.y,
-    0,
-    Mouse.x,
-    Mouse.y,
-    max_dimension
-  );
-  gradient.addColorStop(0, '#aaa');
-  gradient.addColorStop(1, 'black');
-  // drawPolygon(polygons[0], ctx, '#aaa');
-  drawPolygon(polygons[0], ctx, gradient);
-
-  const draw_outer_ring = false;
-  // Draw red dots
-  // ctx.fillStyle = '#dd3838';
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(Mouse.x, Mouse.y, fuzzyRadius + 1, 0, 2 * Math.PI, false);
-  // ctx.arc(Mouse.x, Mouse.y, 2, 0, 2 * Math.PI, false);
-  ctx.fill();
-  if (draw_outer_ring) {
+  if (mouseover) {
+    // Sight Polygons
+    // var fuzzyRadius = 10;
+    var polygons = [getSightPolygon(mouseover.x, mouseover.y, segments)];
     for (var angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2) / dots) {
       var dx = Math.cos(angle) * fuzzyRadius;
       var dy = Math.sin(angle) * fuzzyRadius;
-      ctx.beginPath();
-      ctx.arc(Mouse.x + dx, Mouse.y + dy, 2, 0, 2 * Math.PI, false);
-      ctx.fill();
+      polygons.push(
+        getSightPolygon(mouseover.x + dx, mouseover.y + dy, segments)
+      );
+    }
+
+    const max_dimension = Math.max(canvas.width, canvas.height);
+    let gradient = ctx.createRadialGradient(
+      mouseover.x,
+      mouseover.y,
+      0,
+      mouseover.x,
+      mouseover.y,
+      max_dimension
+    );
+
+    gradient.addColorStop(0, `rgba(255,255,255,${2 / dots})`);
+    gradient.addColorStop(1, `rgba(255,255,255,0)`);
+    // DRAW AS A GIANT POLYGON
+    for (var i = 1; i < polygons.length; i++) {
+      drawPolygon(polygons[i], ctx, gradient);
+    }
+    gradient = ctx.createRadialGradient(
+      mouseover.x,
+      mouseover.y,
+      0,
+      mouseover.x,
+      mouseover.y,
+      max_dimension
+    );
+    gradient.addColorStop(0, '#aaa');
+    gradient.addColorStop(1, 'black');
+    // drawPolygon(polygons[0], ctx, '#aaa');
+    drawPolygon(polygons[0], ctx, gradient);
+
+    const draw_outer_ring = false;
+    // Draw red dots
+    // ctx.fillStyle = '#dd3838';
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(mouseover.x, mouseover.y, fuzzyRadius + 1, 0, 2 * Math.PI, false);
+    // ctx.arc(Mouse.x, Mouse.y, 2, 0, 2 * Math.PI, false);
+    ctx.fill();
+    if (draw_outer_ring) {
+      for (var angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2) / dots) {
+        var dx = Math.cos(angle) * fuzzyRadius;
+        var dy = Math.sin(angle) * fuzzyRadius;
+        ctx.beginPath();
+        ctx.arc(mouseover.x + dx, mouseover.y + dy, 2, 0, 2 * Math.PI, false);
+        ctx.fill();
+      }
     }
   }
 
-  // for (var i = 0; i < segments.length; i++) {
-  //   var seg = segments[i];
-  //   ctx.beginPath();
-  //   ctx.arc(seg.a.x, seg.a.y, 5, 0, 2 * Math.PI);
-  //   ctx.arc(seg.b.x, seg.b.y, 5, 0, 2 * Math.PI);
-  //   ctx.fill();
-  // }
+  if (draw_debug_points) {
+    for (var i = 0; i < segments.length; i++) {
+      var seg = segments[i];
+      ctx.beginPath();
+      ctx.arc(seg.a.x, seg.a.y, 5, 0, 2 * Math.PI);
+      ctx.arc(seg.b.x, seg.b.y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
 
   const draw_active_points = true;
   if (draw_active_points) {

@@ -1,10 +1,16 @@
-import { draw } from './draw';
-import { isPointInPolygon, isPointInRadius, subdivideAll } from './line-utils';
+import { draw, fuzzyRadius } from './draw';
+import {
+  getArea,
+  isPointInPolygon,
+  isPointInRadius,
+  subdivideAll,
+} from './line-utils';
 import './style.css';
 import { Segment, Point } from './interfaces';
 import {
   Polygon,
-  // createRectangle,
+  createRectangle,
+  createRandomPolygon,
   // createSquare
 } from './classes/Polygon';
 import polygon_data from './polygons';
@@ -12,19 +18,25 @@ import polygon_data from './polygons';
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
 
 const point_radius = 20;
+let updateCanvas = true;
+let updateMove = true;
 
-// LINE SEGMENTS
-// const width = 1000;
-// let width = document.body.offsetWidth;
-// let height = document.body.offsetHeight;
-// let center = { x: width / 2, y: height / 2 };
-const border = new Polygon([
-  // Border
-  { x: 0, y: 0 },
-  { x: document.body.offsetWidth, y: 0 },
-  { x: document.body.offsetWidth, y: document.body.offsetHeight },
-  { x: 0, y: document.body.offsetHeight },
-]);
+let borders: Polygon[] = [];
+
+const setBorders = (borders: Polygon[]) => {
+  while (borders.pop());
+  let width = document.body.offsetWidth;
+  let height = document.body.offsetHeight;
+  let center = { x: width / 2, y: height / 2 };
+  borders.push(
+    createRectangle(center, width + 2, height + 2),
+    createRectangle(center, width + fuzzyRadius * 4, height + fuzzyRadius * 4)
+  );
+  updateMove = true;
+};
+
+setBorders(borders);
+
 const polygons: Polygon[] = [
   // createSquare({ x: 400, y: 300 }, 100),
   // createRectangle({ x: 500, y: 500 }, 200, 100),
@@ -36,56 +48,77 @@ const polygons: Polygon[] = [
   // createRectangle(center, width * 0.4, height * 0.4),
   // createRectangle(center, width * 0.3, height * 0.3),
 ];
-for (let points of polygon_data) {
-  polygons.push(new Polygon(points));
-}
+// for (let points of polygon_data) {
+//   polygons.push(new Polygon(points));
+// }
 
 let selected_polygons: Polygon[] = [];
 let selected_point: Point | null = null;
 
 let segments: Segment[] = [
-  { a: { x: 700, y: 150 }, b: { x: 900, y: 150 } },
-  { a: { x: 800, y: 50 }, b: { x: 800, y: 250 } },
-  { a: { x: 0, y: 0 }, b: { x: 640, y: 360 } },
+  // { a: { x: 700, y: 150 }, b: { x: 900, y: 150 } },
+  // { a: { x: 800, y: 50 }, b: { x: 800, y: 250 } },
+  // { a: { x: 0, y: 0 }, b: { x: 640, y: 360 } },
 ];
-segments = [];
 
-// MOUSE
-var Mouse: Point = {
-  x: canvas.width / 2,
-  y: canvas.height / 2,
-};
+var mouseover: Point | null = null;
 
-let mousedown: Point | null = { x: 0, y: 0 };
+const dblClickTime = 500;
+const clickRadius = 5;
+let mousedown: Point | null = null;
+let lastClick: Point | null = null;
 
 function calculateSegments(
-  border: Polygon,
+  borders: Segment[],
   polygons: Polygon[],
   segments: Segment[]
 ) {
-  let result = border.getSegments();
+  let result = borders;
   result = result.concat(segments);
   polygons.forEach((polygon) => {
     if (selected_point) {
       result = result.concat(polygon.getSegments());
     } else if (selected_polygons.includes(polygon)) {
-      result = result.concat(polygon.getPreviewSegments(...getMovement()));
+      // result = result.concat(polygon.getPreviewSegments(...getMovement()));
+      result = result.concat(polygon.getSegments());
     } else result = result.concat(polygon.getSegments());
   });
   result = subdivideAll(result);
   return result;
 }
+function getBorderSegments() {
+  return borders.map((border) => border.getSegments()).flat(1);
+}
 
-let physics_segments: Segment[] = calculateSegments(border, polygons, segments);
+function setSelectedPolygons(event: PointerEvent) {
+  let potential_polygons = getIntersectingPolygons(event);
+  //if potential_polygons is larger than 1, remove all but the polygon with the smallest area
+  if (potential_polygons.length > 1) {
+    potential_polygons = potential_polygons.sort(
+      (a, b) => getArea(a) - getArea(b)
+    );
+    potential_polygons = potential_polygons.slice(0, 1);
+  }
+  selected_polygons = potential_polygons;
+}
+function getIntersectingPolygons(event: PointerEvent) {
+  return polygons.filter((polygon) =>
+    isPointInPolygon(polygon, { x: event.clientX, y: event.clientY })
+  );
+}
+
+let physics_segments: Segment[] = calculateSegments(
+  getBorderSegments(),
+  polygons,
+  segments
+);
 let visible_points: Point[] = [];
 
 // DRAW LOOP
-var updateCanvas = true;
-let updateMove = true;
 function drawLoop() {
   requestAnimationFrame(drawLoop);
   if (updateCanvas || updateMove) {
-    draw(physics_segments, Mouse, visible_points, selected_point);
+    draw(physics_segments, mouseover!, visible_points, selected_point);
     updateCanvas = false;
     updateMove = false;
   }
@@ -94,40 +127,133 @@ window.onload = function () {
   drawLoop();
 };
 
-//store the mouse position on mouse down over the canvas
-canvas.onmousedown = function (event) {
-  mousedown = { x: event.clientX, y: event.clientY };
+function checkClick(pointerup: PointerEvent) {
+  if (
+    mousedown &&
+    Math.abs(pointerup.clientX - mousedown.x) < clickRadius &&
+    Math.abs(pointerup.clientY - mousedown.y) < clickRadius
+  ) {
+    return true;
+  }
+  return false;
+}
+function checkDblClick(event: PointerEvent) {
+  //if the time between event & lastClick is less than dblClickTime
+  //and the distance between event & lastClick is less than clickRadius
+  //then return true
+  if (
+    lastClick &&
+    lastClick.timeStamp &&
+    event.timeStamp - lastClick.timeStamp < dblClickTime &&
+    Math.abs(event.clientX - lastClick.x) < clickRadius &&
+    Math.abs(event.clientY - lastClick.y) < clickRadius
+  ) {
+    return true;
+  }
+  return false;
+}
+function click(event: PointerEvent) {
+  lastClick = {
+    x: event.clientX,
+    y: event.clientY,
+    timeStamp: event.timeStamp,
+  };
+  if (!selected_point) {
+    // add all polygons in the irregular polygon array polygons which contain the mouse position to selected_polygons
+    setSelectedPolygons(event);
+  }
+  updateVisiblePoints();
+}
 
+//store the mouse position on mouse down over the canvas
+canvas.onpointerdown = function (event) {
+  setMousedown(event);
   let in_point = false;
   //loop through each point in the visible_points array and check if the mouse is within the radius of the point
   for (let point of visible_points) {
-    if (isPointInRadius(point, Mouse, point_radius)) {
+    if (isPointInRadius(point, mousedown, point_radius)) {
       in_point = true;
       selected_point = point;
       break;
     }
   }
   if (!in_point) selected_point = null;
-
   if (!selected_point) {
-    // add all polygons in the irregular polygon array polygons which contain the mouse position to selected_polygons
-    selected_polygons = polygons.filter((polygon) =>
-      isPointInPolygon(polygon, { x: event.clientX, y: event.clientY })
-    );
+    let in_selected = false;
+    for (let polygon of selected_polygons) {
+      //if the mouse is inside of the polygon, set in_selected to true
+      if (isPointInPolygon(polygon, { x: event.clientX, y: event.clientY })) {
+        in_selected = true;
+        break;
+      }
+    }
+    if (!in_selected) {
+      selected_polygons = [];
+      // updateVisiblePoints();
+    } else {
+      // click each polygon in selected_polygons
+      for (let polygon of selected_polygons) {
+        polygon.click();
+      }
+    }
   }
   updateVisiblePoints();
+  setMouseover(event);
+  updateCanvas = true;
 };
-canvas.onmouseup = function () {
-  if (!selected_point) {
-    //move the polygon to the mouse position
-    for (let polygon of selected_polygons) {
-      if (!updateMove) updateMove = true;
-      polygon.move(...getMovement());
+
+function onDblClick(event: PointerEvent) {
+  let in_selected = false;
+  for (let polygon of getIntersectingPolygons(event)) {
+    let index = polygons.indexOf(polygon);
+    if (index > -1) {
+      polygons.splice(index, 1);
+      in_selected = true;
     }
-    // if (!selected_point) selected_polygons = [];
+  }
+  if (!in_selected) {
+    let random_polygon = createRandomPolygon({
+      x: event.clientX,
+      y: event.clientY,
+    });
+    polygons.push(random_polygon);
+  }
+  updateSegments();
+  selected_polygons = [];
+  selected_point = null;
+  updateVisiblePoints();
+}
+
+function setMouseover(event: PointerEvent | null) {
+  if (event) mouseover = { x: event.clientX, y: event.clientY };
+  else mouseover = null;
+}
+function setMousedown(event: PointerEvent | null) {
+  if (event) {
+    mousedown = {
+      x: event.clientX,
+      y: event.clientY,
+      timeStamp: event.timeStamp,
+    };
+  } else mousedown = null;
+}
+
+canvas.onpointerup = function (event: PointerEvent) {
+  if (!selected_point) {
+    // for each polygon in selected_polygons, unclick()
+    for (let polygon of selected_polygons) {
+      polygon.unclick();
+    }
+  }
+  let clicked = checkClick(event);
+  let dblClick = checkDblClick(event);
+  if (clicked) click(event);
+  if (clicked && dblClick) {
+    onDblClick(event);
   }
   selected_point = null;
-  mousedown = null;
+  setMousedown(null);
+  updateCanvas = true;
 };
 
 function updateVisiblePoints() {
@@ -135,7 +261,8 @@ function updateVisiblePoints() {
   visible_points = selected_polygons
     .map((polygon) => {
       if (selected_point) return polygon.getPoints();
-      return polygon.getPreviewPoints(...getMovement());
+      return polygon.getPoints();
+      // return polygon.getPreviewPoints(...getMovement());
     })
     .flat(1);
   //if there are points in the visible_points array then update the canvas
@@ -143,15 +270,11 @@ function updateVisiblePoints() {
 }
 
 function getMovement(): [number, number] {
-  if (!Mouse || !mousedown) return [0, 0];
-  return [Mouse.x - mousedown?.x, Mouse.y - mousedown!.y];
-  // return {
-  //   x: Mouse.x - mousedown!.x,
-  //   y: Mouse.y - mousedown!.y,
-  // };
+  if (!mouseover || !mousedown) return [0, 0];
+  return [mouseover.x - mousedown?.x, mouseover.y - mousedown!.y];
 }
 
-canvas.onmousemove = (event) => {
+const pointermove = (event: PointerEvent) => {
   // if the mouse is down and selected_polygons is not empty, set updateMove to true
   if (mousedown && selected_polygons.length > 0) updateMove = true;
   // updateMove = true;
@@ -168,16 +291,47 @@ canvas.onmousemove = (event) => {
         }
       }
       updateVisiblePoints();
-      // updateMove = true;
+    } else {
+      // update all selected_polygons' positions
+      for (let polygon of selected_polygons) {
+        if (!updateMove) updateMove = true;
+        polygon.move(...getMovement());
+      }
     }
     // recalculate the segments
-    physics_segments = calculateSegments(border, polygons, segments);
+    physics_segments = calculateSegments(
+      getBorderSegments(),
+      polygons,
+      segments
+    );
 
     updateVisiblePoints();
   }
-  Mouse.x = event.clientX;
-  Mouse.y = event.clientY;
+  setMouseover(event);
   updateCanvas = true;
+};
+
+updateSegments();
+//define updateSegments()
+function updateSegments() {
+  physics_segments = calculateSegments(getBorderSegments(), polygons, segments);
+}
+
+canvas.onpointermove = (event: PointerEvent) => pointermove(event);
+canvas.onmouseleave = () => {
+  setMousedown(null);
+  setMouseover(null);
+  //unclick all selected_polygons
+  for (let polygon of selected_polygons) {
+    polygon.unclick();
+  }
+  selected_point = null;
+  updateVisiblePoints();
+};
+
+window.onresize = () => {
+  setBorders(borders);
+  updateSegments();
 };
 
 // disable typescript linting for the next line
