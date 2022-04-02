@@ -24,6 +24,13 @@ export enum State {
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
 let state = State.MouseoverMe;
 
+var mouseover: Point | null = null;
+let mousedown: Point | null = null;
+let lastClick: Point | null = null;
+let leftClickRadius = false;
+const dblClickTime = 500;
+const clickRadius = 15;
+
 const point_radius = 20;
 let updateCanvas = true;
 let updateMove = true;
@@ -67,13 +74,6 @@ let segments: Segment[] = [
   // { a: { x: 800, y: 50 }, b: { x: 800, y: 250 } },
   // { a: { x: 0, y: 0 }, b: { x: 640, y: 360 } },
 ];
-
-var mouseover: Point | null = null;
-
-const dblClickTime = 500;
-const clickRadius = 15;
-let mousedown: Point | null = null;
-let lastClick: Point | null = null;
 
 function calculateSegments(
   borders: Segment[],
@@ -134,11 +134,14 @@ window.onload = function () {
   drawLoop();
 };
 
+function chebyshevDistance(a: Point, b: Point) {
+  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+}
 function checkClick(pointerup: PointerEvent) {
   if (
     mousedown &&
-    Math.abs(pointerup.clientX - mousedown.x) < clickRadius &&
-    Math.abs(pointerup.clientY - mousedown.y) < clickRadius
+    !leftClickRadius &&
+    chebyshevDistance(mousedown, pointerup) < clickRadius
   ) {
     return true;
   }
@@ -149,11 +152,11 @@ function checkDblClick(event: PointerEvent) {
   //and the distance between event & lastClick is less than clickRadius
   //then return true
   if (
+    !leftClickRadius &&
     lastClick &&
     lastClick.timeStamp &&
     event.timeStamp - lastClick.timeStamp < dblClickTime &&
-    Math.abs(event.clientX - lastClick.x) < clickRadius &&
-    Math.abs(event.clientY - lastClick.y) < clickRadius
+    chebyshevDistance(lastClick, event) < clickRadius
   ) {
     return true;
   }
@@ -245,6 +248,10 @@ function setMouseover(event: PointerEvent | null) {
   if (event) {
     checkExploreMe(event);
     mouseover = { x: event.clientX, y: event.clientY };
+    // if mousedown is not null & the chebyshev distance between mouseover and mousedown is greater than clickRadius, set leftClickRadius to true
+    if (mousedown && chebyshevDistance(mousedown, mouseover) > clickRadius) {
+      leftClickRadius = true;
+    }
   } else mouseover = null;
 }
 function setMousedown(event: PointerEvent | null) {
@@ -256,6 +263,7 @@ function setMousedown(event: PointerEvent | null) {
       timeStamp: event.timeStamp,
     };
   } else mousedown = null;
+  leftClickRadius = false;
 }
 
 canvas.onpointerup = function (event: PointerEvent) {
