@@ -13,9 +13,16 @@ import {
   createRandomPolygon,
   // createSquare
 } from './classes/Polygon';
-import polygon_data from './polygons';
+// import polygon_data from './polygons';
+
+export enum State {
+  MouseoverMe,
+  ExploreMe,
+  FreePlay,
+}
 
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
+let state = State.MouseoverMe;
 
 const point_radius = 20;
 let updateCanvas = true;
@@ -25,8 +32,8 @@ let borders: Polygon[] = [];
 
 const setBorders = (borders: Polygon[]) => {
   while (borders.pop());
-  let width = document.body.offsetWidth;
-  let height = document.body.offsetHeight;
+  let width = window.innerWidth;
+  let height = window.innerHeight;
   let center = { x: width / 2, y: height / 2 };
   borders.push(
     createRectangle(center, width + 2, height + 2),
@@ -118,7 +125,7 @@ let visible_points: Point[] = [];
 function drawLoop() {
   requestAnimationFrame(drawLoop);
   if (updateCanvas || updateMove) {
-    draw(physics_segments, mouseover!, visible_points, selected_point);
+    draw(state, physics_segments, mouseover!, visible_points, selected_point);
     updateCanvas = false;
     updateMove = false;
   }
@@ -217,6 +224,7 @@ function onDblClick(event: PointerEvent) {
       y: event.clientY,
     });
     polygons.push(random_polygon);
+    if (state === State.MouseoverMe) state = State.ExploreMe;
   }
   updateSegments();
   selected_polygons = [];
@@ -224,12 +232,23 @@ function onDblClick(event: PointerEvent) {
   updateVisiblePoints();
 }
 
+function checkExploreMe(event: PointerEvent) {
+  if (
+    state === State.ExploreMe &&
+    getIntersectingPolygons(event).length === 0
+  ) {
+    state = State.FreePlay;
+  }
+}
 function setMouseover(event: PointerEvent | null) {
-  if (event) mouseover = { x: event.clientX, y: event.clientY };
-  else mouseover = null;
+  if (event) {
+    checkExploreMe(event);
+    mouseover = { x: event.clientX, y: event.clientY };
+  } else mouseover = null;
 }
 function setMousedown(event: PointerEvent | null) {
   if (event) {
+    checkExploreMe(event);
     mousedown = {
       x: event.clientX,
       y: event.clientY,
