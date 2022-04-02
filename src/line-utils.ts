@@ -10,8 +10,8 @@ export function subdivideAll(segments: Segment[]) {
 
 function subdivideSegments(segments: Segment[]) {
   const result = [];
-  for (var i = 0; i < segments.length; i++) {
-    for (var j = 0; j < segments.length; j++) {
+  for (let i = 0; i < segments.length; i++) {
+    for (let j = 0; j < segments.length; j++) {
       if (i != j) {
         const subdivided = subdivide(segments[i], segments[j]);
         result.push(...subdivided);
@@ -38,13 +38,13 @@ function filterIdenticalSegments(segments: Segment[]) {
 
 //define a function that takes 2 line segments as arguments and returns an array of line segments that represent the input segments subdivided into smaller segments based on their intersection
 function subdivide(seg1: Segment, seg2: Segment) {
-  var seg1_a = seg1.a;
-  var seg1_b = seg1.b;
-  var seg2_a = seg2.a;
-  var seg2_b = seg2.b;
+  let seg1_a = seg1.a;
+  let seg1_b = seg1.b;
+  let seg2_a = seg2.a;
+  let seg2_b = seg2.b;
 
   //find the intersection of the two segments
-  var intersect = getIntersection(seg1_a, seg1_b, seg2_a, seg2_b);
+  let intersect = getIntersection(seg1_a, seg1_b, seg2_a, seg2_b);
 
   //if the segments intersect, return an array of line segments that represent the input segments subdivided into smaller segments based on their intersection
   if (intersect) {
@@ -73,24 +73,24 @@ export function getIntersection(
   seg2_a: Point,
   seg2_b: Point
 ) {
-  var x1 = seg1_a.x;
-  var y1 = seg1_a.y;
-  var x2 = seg1_b.x;
-  var y2 = seg1_b.y;
-  var x3 = seg2_a.x;
-  var y3 = seg2_a.y;
-  var x4 = seg2_b.x;
-  var y4 = seg2_b.y;
+  let x1 = seg1_a.x;
+  let y1 = seg1_a.y;
+  let x2 = seg1_b.x;
+  let y2 = seg1_b.y;
+  let x3 = seg2_a.x;
+  let y3 = seg2_a.y;
+  let x4 = seg2_b.x;
+  let y4 = seg2_b.y;
 
-  var den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  let den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
 
   //if the segments are parallel, return false
   if (den == 0) {
     return null;
   }
 
-  var t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
-  var u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+  let t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+  let u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
 
   //if the intersection is on the segment, return an object with the intersection coordinates
   if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {

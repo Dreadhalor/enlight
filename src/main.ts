@@ -27,10 +27,11 @@ const font_size = '60px';
 
 let state = State.MouseoverMe;
 
-var mouseover: Point | null = null;
+let mouseover: Point | null = null;
 let mousedown: Point | null = null;
 let lastClick: Point | null = null;
 let leftClickRadius = false;
+let justDblClicked = false;
 const dblClickTime = 500;
 const clickRadius = 15;
 
@@ -164,6 +165,7 @@ function checkDblClick(event: PointerEvent) {
   //and the distance between event & lastClick is less than clickRadius
   //then return true
   if (
+    !justDblClicked &&
     !leftClickRadius &&
     lastClick &&
     lastClick.timeStamp &&
@@ -175,6 +177,7 @@ function checkDblClick(event: PointerEvent) {
   return false;
 }
 function click(event: PointerEvent) {
+  justDblClicked = false;
   lastClick = {
     x: event.clientX,
     y: event.clientY,
@@ -224,6 +227,7 @@ canvas.onpointerdown = function (event) {
 };
 
 function onDblClick(event: PointerEvent) {
+  justDblClicked = true;
   let in_selected = false;
   for (let polygon of getIntersectingPolygons(event)) {
     let polygon_index = polygons.indexOf(polygon);
@@ -286,10 +290,8 @@ canvas.onpointerup = function (event: PointerEvent) {
   }
   let clicked = checkClick(event);
   let dblClick = checkDblClick(event);
-  if (clicked) click(event);
-  if (clicked && dblClick) {
-    onDblClick(event);
-  }
+  if (dblClick) onDblClick(event);
+  else if (clicked) click(event);
   selected_point = null;
   setMousedown(null);
   updateCanvas = true;
