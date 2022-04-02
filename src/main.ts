@@ -199,7 +199,6 @@ canvas.onpointerdown = function (event) {
     }
     if (!in_selected) {
       selected_polygons = [];
-      // updateVisiblePoints();
     } else {
       // click each polygon in selected_polygons
       for (let polygon of selected_polygons) {
@@ -285,15 +284,10 @@ canvas.onpointerup = function (event: PointerEvent) {
 };
 
 function updateVisiblePoints() {
-  //add each point from selected_polygons to the visible_points array
+  //set the visible_points array to the points of all polygons in the selected_polygons array
   visible_points = selected_polygons
-    .map((polygon) => {
-      if (selected_point) return polygon.getPoints();
-      return polygon.getPoints();
-      // return polygon.getPreviewPoints(...getMovement());
-    })
+    .map((polygon) => polygon.getPoints())
     .flat(1);
-  //if there are points in the visible_points array then update the canvas
   updateCanvas = true;
 }
 

@@ -17,7 +17,7 @@ const draw_debug_points = false;
 const draw_active_points = true;
 const draw_fuzzy_lights = true;
 const draw_primary_light = true;
-
+const tutorial_font = '60px Annie Use Your Telescope';
 export function draw(
   state: State,
   segments: Segment[],
@@ -31,7 +31,7 @@ export function draw(
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (state === State.MouseoverMe || state === State.ExploreMe) {
-    ctx.font = '30px Arial';
+    ctx.font = tutorial_font;
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     let message =
@@ -62,7 +62,7 @@ export function draw(
 
     if (state === State.MouseoverMe) {
       ctx.globalCompositeOperation = 'source-atop';
-      ctx.font = '30px Arial';
+      ctx.font = tutorial_font;
       ctx.fillStyle = 'black';
       ctx.textAlign = 'center';
       ctx.fillText(
