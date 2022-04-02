@@ -1,6 +1,17 @@
+import { Polygon } from './classes/Polygon';
+import {
+  drawActivePoints,
+  drawDebugPoints,
+  drawFuzzyLightOrbs,
+  drawFuzzyLights,
+  drawLightOrb,
+  drawOutlines,
+  drawPrimaryLight,
+  getFuzzyGradient,
+  getPrimaryGradient,
+} from './draw-steps';
 import { Point, Segment } from './interfaces';
 import { State } from './main';
-import { getSightPolygon } from './utils';
 
 // DRAWING
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
@@ -17,12 +28,33 @@ const draw_debug_points = false;
 const draw_active_points = true;
 const draw_fuzzy_lights = true;
 const draw_primary_light = true;
+
+const question_mark_native_size = 12;
+//create a new image with src 'assets/AiFillQuestionCircle.svg'
+// const question_mark = new Image();
+// question_mark.src = '/src/assets/AiFillQuestionCircle.svg';
+// question_mark.onload = () => {
+//   ctx.drawImage(
+//     question_mark,
+//     canvas.width / 2 - question_mark.width / 2,
+//     canvas.height / 2 - question_mark.height / 2
+//   );
+// };
+
+const question_mark_path = new Path2D(
+  'M6 0C2.7 0 0 2.7 0 6s2.7 6 6 6s6-2.7 6-6S9.3 0 6 0z M6 9.5c-0.3 0-0.5-0.2-0.5-0.5c0-0.3 0.2-0.5 0.5-0.5 c0.3 0 0.5 0.2 0.5 0.5C6.5 9.2 6.3 9.5 6 9.5z M6.8 6.5C6.6 6.6 6.4 6.9 6.4 7.1v0.3c0 0.1 0 0.1-0.1 0.1H5.7c-0.1 0-0.1 0-0.1-0.1 V7.2c0-0.3 0.1-0.6 0.3-0.9C6 6 6.3 5.8 6.5 5.7c0.5-0.2 0.8-0.6 0.8-1c0-0.6-0.6-1.1-1.3-1.1S4.7 4.2 4.7 4.8v0.1 c0 0.1 0 0.1-0.1 0.1H4c-0.1 0-0.1 0-0.1-0.1V4.8c0-0.5 0.2-1 0.6-1.4C4.9 3 5.4 2.8 6 2.8S7.1 3 7.5 3.4c0.4 0.4 0.6 0.9 0.6 1.4 C8.1 5.5 7.6 6.2 6.8 6.5z'
+);
+const question_mark_hit_detection = new Path2D(
+  'M6 0C2.7 0 0 2.7 0 6s2.7 6 6 6s6-2.7 6-6S9.3 0 6 0z'
+);
+
 export function draw(
   state: State,
   segments: Segment[],
   mouseover: Point,
   points: Point[],
   selected_point: Point | null,
+  polygons: Polygon[],
   font: string
 ) {
   canvas.width = window.innerWidth;
@@ -34,10 +66,33 @@ export function draw(
     ctx.font = font;
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     let message =
       state === State.MouseoverMe ? 'Mouse over me!' : 'Explore me!';
     ctx.fillText(message, canvas.width / 2, canvas.height / 2);
   }
+  // if (state === State.FreePlay) {
+  //   for (let polygon of polygons) {
+  //     //calculate the middle of the polygon
+  //     let points = polygon.getPoints();
+  //     let center = {
+  //       x: points[0].x,
+  //       y: points[0].y,
+  //     };
+  //     for (let i = 1; i < points.length; i++) {
+  //       center.x += points[i].x;
+  //       center.y += points[i].y;
+  //     }
+  //     center.x /= points.length;
+  //     center.y /= points.length;
+  //     ctx.font = font;
+  //     ctx.fillStyle = 'white';
+  //     ctx.textAlign = 'center';
+  //     ctx.textBaseline = 'middle';
+  //     let message = 'Click me!';
+  //     // ctx.fillText(message, center.x, center.y);
+  //   }
+  // }
 
   if (draw_outlines) drawOutlines(segments, ctx);
 
@@ -49,6 +104,7 @@ export function draw(
         mouseover,
         segments,
         dots,
+        fuzzyRadius,
         ctx,
         getFuzzyGradient(max_dimension, mouseover, dots, ctx)
       );
@@ -65,6 +121,7 @@ export function draw(
       ctx.font = font;
       ctx.fillStyle = 'black';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText(
         'Double click me!',
         canvas.width / 2,
@@ -72,156 +129,68 @@ export function draw(
       );
       ctx.globalCompositeOperation = 'source-over';
     }
+    // if (state === State.FreePlay) {
+    //   ctx.globalCompositeOperation = 'source-atop';
+    //   for (let polygon of polygons) {
+    //     //calculate the middle of the polygon
+    //     let points = polygon.getPoints();
+    //     let center = {
+    //       x: points[0].x,
+    //       y: points[0].y,
+    //     };
+    //     for (let i = 1; i < points.length; i++) {
+    //       center.x += points[i].x;
+    //       center.y += points[i].y;
+    //     }
+    //     center.x /= points.length;
+    //     center.y /= points.length;
+    //     ctx.font = font;
+    //     ctx.fillStyle = 'black';
+    //     ctx.textAlign = 'center';
+    //     ctx.textBaseline = 'middle';
+    //     let message = 'Click me!';
+    //     // ctx.fillText(message, center.x, center.y);
+    //   }
+    //   ctx.globalCompositeOperation = 'source-over';
+    // }
 
+    // drawQuestionMark(getCenter(), mouseover, ctx);
     if (draw_light_orb) drawLightOrb(mouseover, fuzzyRadius + 1, ctx);
-    if (draw_fuzzy_light_orbs) drawFuzzyLightOrbs(mouseover, dots, ctx);
+    if (draw_fuzzy_light_orbs)
+      drawFuzzyLightOrbs(mouseover, dots, fuzzyRadius, ctx);
   }
   if (draw_debug_points) drawDebugPoints(segments, ctx);
-  if (draw_active_points) drawActivePoints(points, selected_point, ctx);
+  if (draw_active_points)
+    drawActivePoints(
+      points,
+      selected_point,
+      point_radius,
+      selected_point_radius,
+      ctx
+    );
+  // ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function drawPolygon(
-  polygon: Point[],
-  ctx: CanvasRenderingContext2D,
-  fillStyle: string | CanvasGradient | CanvasPattern
-) {
-  ctx.fillStyle = fillStyle;
-  ctx.beginPath();
-  ctx.moveTo(polygon[0].x, polygon[0].y);
-  for (let i = 1; i < polygon.length; i++) {
-    let intersect = polygon[i];
-    ctx.lineTo(intersect.x, intersect.y);
-  }
-  ctx.fill();
+function getCenter() {
+  return { x: canvas.width / 2, y: canvas.height / 2 };
 }
 
-function getPrimaryGradient(
-  max_dimension: number,
+function drawQuestionMark(
+  center: Point,
   mouseover: Point,
   ctx: CanvasRenderingContext2D
 ) {
-  let gradient = ctx.createRadialGradient(
-    mouseover.x,
-    mouseover.y,
-    0,
-    mouseover.x,
-    mouseover.y,
-    max_dimension
-  );
-  gradient.addColorStop(0, '#aaa');
-  gradient.addColorStop(1, 'black');
+  let scale = 3;
+  ctx.save();
+  ctx.fillStyle = '#ffffff11';
+  ctx.scale(scale, scale);
+  ctx.translate((center.x * 2) / scale - question_mark_native_size - 2, 2);
 
-  return gradient;
-}
-function getFuzzyGradient(
-  max_dimension: number,
-  mouseover: Point,
-  dots: number,
-  ctx: CanvasRenderingContext2D
-) {
-  let gradient = ctx.createRadialGradient(
-    mouseover.x,
-    mouseover.y,
-    0,
-    mouseover.x,
-    mouseover.y,
-    max_dimension
-  );
-
-  gradient.addColorStop(0, `rgba(255,255,255,${2 / dots})`);
-  gradient.addColorStop(1, `rgba(255,255,255,0)`);
-
-  return gradient;
-}
-
-function drawOutlines(segments: Segment[], ctx: CanvasRenderingContext2D) {
-  ctx.strokeStyle = '#999';
-  for (let i = 0; i < segments.length; i++) {
-    let seg = segments[i];
-    ctx.beginPath();
-    ctx.moveTo(seg.a.x, seg.a.y);
-    ctx.lineTo(seg.b.x, seg.b.y);
-    ctx.stroke();
-  }
-}
-
-function drawFuzzyLightOrbs(
-  mouseover: Point,
-  dots: number,
-  ctx: CanvasRenderingContext2D
-) {
-  // Draw red dots
-  ctx.fillStyle = '#dd3838';
-  for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2) / dots) {
-    let dx = Math.cos(angle) * fuzzyRadius;
-    let dy = Math.sin(angle) * fuzzyRadius;
-    ctx.beginPath();
-    ctx.arc(mouseover.x + dx, mouseover.y + dy, 2, 0, 2 * Math.PI, false);
-    ctx.fill();
-  }
-}
-
-function drawLightOrb(
-  mouseover: Point,
-  radius: number,
-  ctx: CanvasRenderingContext2D
-) {
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(mouseover.x, mouseover.y, radius, 0, 2 * Math.PI, false);
-  ctx.fill();
-}
-
-function drawDebugPoints(segments: Segment[], ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = 'white';
-  for (let i = 0; i < segments.length; i++) {
-    let seg = segments[i];
-    ctx.beginPath();
-    ctx.arc(seg.a.x, seg.a.y, 5, 0, 2 * Math.PI);
-    ctx.arc(seg.b.x, seg.b.y, 5, 0, 2 * Math.PI);
-    ctx.fill();
-  }
-}
-
-function drawActivePoints(
-  points: Point[],
-  selected_point: Point | null,
-  ctx: CanvasRenderingContext2D
-) {
-  ctx.fillStyle = '#dd3838';
-  for (let point of points) {
-    ctx.beginPath();
-    let radius =
-      point !== selected_point ? point_radius : selected_point_radius;
-    ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI);
-    ctx.fill();
-  }
-}
-
-function drawPrimaryLight(
-  mouseover: Point,
-  segments: Segment[],
-  ctx: CanvasRenderingContext2D,
-  fillStyle: string | CanvasGradient | CanvasPattern
-) {
-  let shadow = getSightPolygon(mouseover.x, mouseover.y, segments);
-  drawPolygon(shadow, ctx, fillStyle);
-}
-function drawFuzzyLights(
-  mouseover: Point,
-  segments: Segment[],
-  dots: number,
-  ctx: CanvasRenderingContext2D,
-  fillStyle: string | CanvasGradient | CanvasPattern
-) {
-  let shadows: any[] = [];
-  for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2) / dots) {
-    let dx = Math.cos(angle) * fuzzyRadius;
-    let dy = Math.sin(angle) * fuzzyRadius;
-    shadows.push(getSightPolygon(mouseover.x + dx, mouseover.y + dy, segments));
-  }
-  // DRAW AS A GIANT POLYGON
-  for (let shadow of shadows) {
-    drawPolygon(shadow, ctx, fillStyle);
-  }
+  if (
+    mouseover &&
+    ctx.isPointInPath(question_mark_hit_detection, mouseover.x, mouseover.y)
+  )
+    ctx.fillStyle = '#dd3838';
+  ctx.fill(question_mark_path);
+  ctx.restore();
 }

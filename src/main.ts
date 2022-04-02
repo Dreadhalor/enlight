@@ -18,6 +18,9 @@ import FontFaceObserver from 'fontfaceobserver-es';
 export enum State {
   MouseoverMe,
   ExploreMe,
+  ClickMe,
+  DragMe,
+  ResizeMe,
   FreePlay,
 }
 
@@ -102,7 +105,7 @@ function getBorderSegments() {
 }
 
 function setSelectedPolygons(event: PointerEvent) {
-  let potential_polygons = getIntersectingPolygons(event);
+  let potential_polygons = getIntersectingPolygons(event, polygons);
   //if potential_polygons is larger than 1, remove all but the polygon with the smallest area
   if (potential_polygons.length > 1) {
     potential_polygons = potential_polygons.sort(
@@ -112,7 +115,10 @@ function setSelectedPolygons(event: PointerEvent) {
   }
   selected_polygons = potential_polygons;
 }
-function getIntersectingPolygons(event: PointerEvent) {
+function getIntersectingPolygons(
+  event: PointerEvent,
+  polygons: Polygon[] = []
+) {
   return polygons.filter((polygon) =>
     isPointInPolygon(polygon, { x: event.clientX, y: event.clientY })
   );
@@ -134,6 +140,7 @@ function drawLoop() {
       mouseover!,
       visible_points,
       selected_point,
+      polygons,
       `${font_size} ${font_name}`
     );
     updateCanvas = false;
@@ -229,7 +236,7 @@ canvas.onpointerdown = function (event) {
 function onDblClick(event: PointerEvent) {
   justDblClicked = true;
   let in_selected = false;
-  for (let polygon of getIntersectingPolygons(event)) {
+  for (let polygon of getIntersectingPolygons(event, polygons)) {
     let polygon_index = polygons.indexOf(polygon);
     let selected_index = selected_polygons.indexOf(polygon);
     if (polygon_index > -1 && selected_index > -1) {
@@ -254,7 +261,7 @@ function onDblClick(event: PointerEvent) {
 function checkExploreMe(event: PointerEvent) {
   if (
     state === State.ExploreMe &&
-    getIntersectingPolygons(event).length === 0
+    getIntersectingPolygons(event, polygons).length === 0
   ) {
     state = State.FreePlay;
   }
