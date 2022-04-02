@@ -11,9 +11,9 @@ import {
   Polygon,
   createRectangle,
   createRandomPolygon,
-  // createSquare
 } from './classes/Polygon';
 // import polygon_data from './polygons';
+import FontFaceObserver from 'fontfaceobserver-es';
 
 export enum State {
   MouseoverMe,
@@ -22,6 +22,9 @@ export enum State {
 }
 
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
+const font_name = 'Annie Use Your Telescope';
+const font_size = '60px';
+
 let state = State.MouseoverMe;
 
 var mouseover: Point | null = null;
@@ -123,15 +126,24 @@ let visible_points: Point[] = [];
 
 // DRAW LOOP
 function drawLoop() {
-  requestAnimationFrame(drawLoop);
   if (updateCanvas || updateMove) {
-    draw(state, physics_segments, mouseover!, visible_points, selected_point);
+    draw(
+      state,
+      physics_segments,
+      mouseover!,
+      visible_points,
+      selected_point,
+      `${font_size} ${font_name}`
+    );
     updateCanvas = false;
     updateMove = false;
   }
+  requestAnimationFrame(drawLoop);
 }
 window.onload = function () {
-  drawLoop();
+  //dont start the draw loop until the font is loaded
+  const font_loader = new FontFaceObserver(font_name);
+  font_loader.load().then(() => drawLoop());
 };
 
 function chebyshevDistance(a: Point, b: Point) {
