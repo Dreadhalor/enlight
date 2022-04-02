@@ -71,7 +71,7 @@ let segments: Segment[] = [
 var mouseover: Point | null = null;
 
 const dblClickTime = 500;
-const clickRadius = 5;
+const clickRadius = 15;
 let mousedown: Point | null = null;
 let lastClick: Point | null = null;
 
@@ -212,9 +212,10 @@ canvas.onpointerdown = function (event) {
 function onDblClick(event: PointerEvent) {
   let in_selected = false;
   for (let polygon of getIntersectingPolygons(event)) {
-    let index = polygons.indexOf(polygon);
-    if (index > -1) {
-      polygons.splice(index, 1);
+    let polygon_index = polygons.indexOf(polygon);
+    let selected_index = selected_polygons.indexOf(polygon);
+    if (polygon_index > -1 && selected_index > -1) {
+      polygons.splice(polygon_index, 1);
       in_selected = true;
     }
   }
@@ -224,10 +225,10 @@ function onDblClick(event: PointerEvent) {
       y: event.clientY,
     });
     polygons.push(random_polygon);
+    selected_polygons = [random_polygon];
     if (state === State.MouseoverMe) state = State.ExploreMe;
-  }
+  } else selected_polygons = [];
   updateSegments();
-  selected_polygons = [];
   selected_point = null;
   updateVisiblePoints();
 }

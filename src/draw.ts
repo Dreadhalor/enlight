@@ -8,7 +8,7 @@ const ctx = canvas.getContext('2d')!;
 
 export const fuzzyRadius = 10;
 const dots = 10;
-const point_radius = 5;
+const point_radius = 4;
 const selected_point_radius = 10;
 const draw_light_orb = true;
 const draw_fuzzy_light_orbs = false;
