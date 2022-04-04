@@ -33,12 +33,12 @@ const draw_active_points = true;
 const draw_fuzzy_lights = true;
 const draw_primary_light = true;
 
-const question_mark_path = new Path2D(
-  'M6 0C2.7 0 0 2.7 0 6s2.7 6 6 6s6-2.7 6-6S9.3 0 6 0z M6 9.5c-0.3 0-0.5-0.2-0.5-0.5c0-0.3 0.2-0.5 0.5-0.5 c0.3 0 0.5 0.2 0.5 0.5C6.5 9.2 6.3 9.5 6 9.5z M6.8 6.5C6.6 6.6 6.4 6.9 6.4 7.1v0.3c0 0.1 0 0.1-0.1 0.1H5.7c-0.1 0-0.1 0-0.1-0.1 V7.2c0-0.3 0.1-0.6 0.3-0.9C6 6 6.3 5.8 6.5 5.7c0.5-0.2 0.8-0.6 0.8-1c0-0.6-0.6-1.1-1.3-1.1S4.7 4.2 4.7 4.8v0.1 c0 0.1 0 0.1-0.1 0.1H4c-0.1 0-0.1 0-0.1-0.1V4.8c0-0.5 0.2-1 0.6-1.4C4.9 3 5.4 2.8 6 2.8S7.1 3 7.5 3.4c0.4 0.4 0.6 0.9 0.6 1.4 C8.1 5.5 7.6 6.2 6.8 6.5z'
-);
-const question_mark_hit_detection = new Path2D(
-  'M6 0C2.7 0 0 2.7 0 6s2.7 6 6 6s6-2.7 6-6S9.3 0 6 0z'
-);
+// const question_mark_path = new Path2D(
+//   'M6 0C2.7 0 0 2.7 0 6s2.7 6 6 6s6-2.7 6-6S9.3 0 6 0z M6 9.5c-0.3 0-0.5-0.2-0.5-0.5c0-0.3 0.2-0.5 0.5-0.5 c0.3 0 0.5 0.2 0.5 0.5C6.5 9.2 6.3 9.5 6 9.5z M6.8 6.5C6.6 6.6 6.4 6.9 6.4 7.1v0.3c0 0.1 0 0.1-0.1 0.1H5.7c-0.1 0-0.1 0-0.1-0.1 V7.2c0-0.3 0.1-0.6 0.3-0.9C6 6 6.3 5.8 6.5 5.7c0.5-0.2 0.8-0.6 0.8-1c0-0.6-0.6-1.1-1.3-1.1S4.7 4.2 4.7 4.8v0.1 c0 0.1 0 0.1-0.1 0.1H4c-0.1 0-0.1 0-0.1-0.1V4.8c0-0.5 0.2-1 0.6-1.4C4.9 3 5.4 2.8 6 2.8S7.1 3 7.5 3.4c0.4 0.4 0.6 0.9 0.6 1.4 C8.1 5.5 7.6 6.2 6.8 6.5z'
+// );
+// const question_mark_hit_detection = new Path2D(
+//   'M6 0C2.7 0 0 2.7 0 6s2.7 6 6 6s6-2.7 6-6S9.3 0 6 0z'
+// );
 
 export function draw(
   state: State,
@@ -100,7 +100,6 @@ export function draw(
     if (state === State.ExploreMe || state === State.FreePlay) {
       drawQuestionMark(
         question_mark_location,
-        mouseover,
         question_mark,
         question_mark_size,
         ctx
@@ -124,13 +123,8 @@ export function draw(
   // ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function getCenter() {
-  return { x: canvas.width / 2, y: canvas.height / 2 };
-}
-
 function drawQuestionMark(
   center: Point,
-  mouseover: Point,
   question_mark: HTMLImageElement,
   question_mark_size: number,
   ctx: CanvasRenderingContext2D

@@ -51,7 +51,7 @@ const info = document.querySelector<HTMLDivElement>('#info')!;
 let info_open = false;
 const qmark = document.querySelector<HTMLImageElement>('#qmark')!;
 
-qmark.onclick = (event: MouseEvent) => {
+qmark.onclick = () => {
   info_open = info.style.display === 'none' ? true : false;
 };
 qmark.onpointerover = () => {
