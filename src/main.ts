@@ -15,16 +15,39 @@ import {
 // import polygon_data from './polygons';
 import FontFaceObserver from 'fontfaceobserver-es';
 
+const question_mark_size = 36;
+//create a new image with src 'assets/AiFillQuestionCircle.svg'
+const question_mark = new Image();
+let question_mark_location = { x: 0, y: 0 };
+question_mark.src = '/src/assets/AiFillQuestionCircle.svg';
+question_mark.onload = () => {
+  console.log('loaded');
+};
+
 export enum State {
   MouseoverMe,
   ExploreMe,
-  ClickMe,
-  DragMe,
-  ResizeMe,
   FreePlay,
 }
 
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
+const mouse = document.createElement('canvas');
+const ctx_mouse = mouse.getContext('2d')!;
+const mouse_radius = 11;
+mouse.width = mouse_radius * 2;
+mouse.height = mouse_radius * 2;
+ctx_mouse.fillStyle = '#fff';
+ctx_mouse.arc(mouse_radius, mouse_radius, mouse_radius, 0, 2 * Math.PI);
+ctx_mouse.fill();
+
+const overlay = document.querySelector<HTMLDivElement>('#overlay')!;
+const info = document.querySelector<HTMLDivElement>('#info')!;
+const qmark = document.querySelector<HTMLImageElement>('#qmark')!;
+
+qmark.onclick = (event: any) => {
+  info.style.display = 'block';
+};
+
 const font_name = 'Annie Use Your Telescope';
 const font_size = '60px';
 
@@ -133,6 +156,16 @@ let visible_points: Point[] = [];
 
 // DRAW LOOP
 function drawLoop() {
+  //set the cursor of info to the mouse canvas
+  document.body.style.cursor = `url(${mouse.toDataURL()}) ${mouse_radius} ${mouse_radius}, auto`;
+
+  qmark.style.display = state === State.ExploreMe ? 'block' : 'none';
+  if (state === State.ExploreMe) {
+    question_mark_location = { x: canvas.width / 2, y: canvas.height / 2 };
+    qmark.style.left = `${question_mark_location.x - question_mark_size / 2}px`;
+    qmark.style.top = `${question_mark_location.y - question_mark_size / 2}px`;
+  }
+  let rect = qmark.getBoundingClientRect();
   if (updateCanvas || updateMove) {
     draw(
       state,
@@ -141,9 +174,15 @@ function drawLoop() {
       visible_points,
       selected_point,
       polygons,
-      `${font_size} ${font_name}`
+      `${font_size} ${font_name}`,
+      question_mark,
+      {
+        x: rect.left + question_mark_size / 2,
+        y: rect.top + question_mark_size / 2,
+      },
+      question_mark_size
     );
-    updateCanvas = false;
+    updateCanvas = true;
     updateMove = false;
   }
   requestAnimationFrame(drawLoop);
@@ -197,42 +236,6 @@ function click(event: PointerEvent) {
   updateVisiblePoints();
 }
 
-//store the mouse position on mouse down over the canvas
-canvas.onpointerdown = function (event) {
-  setMousedown(event);
-  let in_point = false;
-  //loop through each point in the visible_points array and check if the mouse is within the radius of the point
-  for (let point of visible_points) {
-    if (isPointInRadius(point, mousedown, point_radius)) {
-      in_point = true;
-      selected_point = point;
-      break;
-    }
-  }
-  if (!in_point) selected_point = null;
-  if (!selected_point) {
-    let in_selected = false;
-    for (let polygon of selected_polygons) {
-      //if the mouse is inside of the polygon, set in_selected to true
-      if (isPointInPolygon(polygon, { x: event.clientX, y: event.clientY })) {
-        in_selected = true;
-        break;
-      }
-    }
-    if (!in_selected) {
-      selected_polygons = [];
-    } else {
-      // click each polygon in selected_polygons
-      for (let polygon of selected_polygons) {
-        polygon.click();
-      }
-    }
-  }
-  updateVisiblePoints();
-  setMouseover(event);
-  updateCanvas = true;
-};
-
 function onDblClick(event: PointerEvent) {
   justDblClicked = true;
   let in_selected = false;
@@ -259,12 +262,14 @@ function onDblClick(event: PointerEvent) {
 }
 
 function checkExploreMe(event: PointerEvent) {
-  if (
-    state === State.ExploreMe &&
-    getIntersectingPolygons(event, polygons).length === 0
-  ) {
-    state = State.FreePlay;
-  }
+  info.innerHTML = 'hi there';
+
+  // if (
+  //   state === State.ExploreMe &&
+  //   getIntersectingPolygons(event, polygons).length === 0
+  // ) {
+  //   state = State.FreePlay;
+  // }
 }
 function setMouseover(event: PointerEvent | null) {
   if (event) {
@@ -288,22 +293,6 @@ function setMousedown(event: PointerEvent | null) {
   leftClickRadius = false;
 }
 
-canvas.onpointerup = function (event: PointerEvent) {
-  if (!selected_point) {
-    // for each polygon in selected_polygons, unclick()
-    for (let polygon of selected_polygons) {
-      polygon.unclick();
-    }
-  }
-  let clicked = checkClick(event);
-  let dblClick = checkDblClick(event);
-  if (dblClick) onDblClick(event);
-  else if (clicked) click(event);
-  selected_point = null;
-  setMousedown(null);
-  updateCanvas = true;
-};
-
 function updateVisiblePoints() {
   //set the visible_points array to the points of all polygons in the selected_polygons array
   visible_points = selected_polygons
@@ -316,6 +305,17 @@ function getMovement(): [number, number] {
   if (!mouseover || !mousedown) return [0, 0];
   return [mouseover.x - mousedown?.x, mouseover.y - mousedown!.y];
 }
+
+updateSegments();
+//define updateSegments()
+function updateSegments() {
+  physics_segments = calculateSegments(getBorderSegments(), polygons, segments);
+}
+
+window.onresize = () => {
+  setBorders(borders);
+  updateSegments();
+};
 
 const pointermove = (event: PointerEvent) => {
   // if the mouse is down and selected_polygons is not empty, set updateMove to true
@@ -353,15 +353,67 @@ const pointermove = (event: PointerEvent) => {
   setMouseover(event);
   updateCanvas = true;
 };
+// canvas.onpointermove = pointermove;
+overlay.onpointermove = pointermove;
 
-updateSegments();
-//define updateSegments()
-function updateSegments() {
-  physics_segments = calculateSegments(getBorderSegments(), polygons, segments);
-}
+//store the mouse position on mouse down over the canvas
+const pointerdown = (event: PointerEvent) => {
+  question_mark_location = { x: event.clientX, y: event.clientY };
+  setMousedown(event);
+  let in_point = false;
+  //loop through each point in the visible_points array and check if the mouse is within the radius of the point
+  for (let point of visible_points) {
+    if (isPointInRadius(point, mousedown, point_radius)) {
+      in_point = true;
+      selected_point = point;
+      break;
+    }
+  }
+  if (!in_point) selected_point = null;
+  if (!selected_point) {
+    let in_selected = false;
+    for (let polygon of selected_polygons) {
+      //if the mouse is inside of the polygon, set in_selected to true
+      if (isPointInPolygon(polygon, { x: event.clientX, y: event.clientY })) {
+        in_selected = true;
+        break;
+      }
+    }
+    if (!in_selected) {
+      selected_polygons = [];
+    } else {
+      // click each polygon in selected_polygons
+      for (let polygon of selected_polygons) {
+        polygon.click();
+      }
+    }
+  }
+  updateVisiblePoints();
+  setMouseover(event);
+  updateCanvas = true;
+};
+// canvas.onpointerdown = pointerdown;
+overlay.onpointerdown = pointerdown;
 
-canvas.onpointermove = (event: PointerEvent) => pointermove(event);
-canvas.onmouseleave = () => {
+const pointerup = (event: PointerEvent) => {
+  if (!selected_point) {
+    // for each polygon in selected_polygons, unclick()
+    for (let polygon of selected_polygons) {
+      polygon.unclick();
+    }
+  }
+  let clicked = checkClick(event);
+  let dblClick = checkDblClick(event);
+  if (dblClick) onDblClick(event);
+  else if (clicked) click(event);
+  selected_point = null;
+  setMousedown(null);
+  updateCanvas = true;
+};
+// canvas.onpointerup = pointerup;
+overlay.onpointerup = pointerup;
+
+const mouseleave = () => {
   setMousedown(null);
   setMouseover(null);
   //unclick all selected_polygons
@@ -371,11 +423,8 @@ canvas.onmouseleave = () => {
   selected_point = null;
   updateVisiblePoints();
 };
-
-window.onresize = () => {
-  setBorders(borders);
-  updateSegments();
-};
+// canvas.onmouseleave = mouseleave;
+overlay.onmouseleave = mouseleave;
 
 // disable typescript linting for the next line
 // @ts-ignore
