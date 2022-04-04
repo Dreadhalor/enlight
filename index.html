@@ -10,23 +10,47 @@
       href="https://fonts.googleapis.com/css?family=Annie Use Your Telescope"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/simple-scrollbar@latest/simple-scrollbar.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/simple-scrollbar@latest/simple-scrollbar.min.js"></script>
   </head>
-  <body style="position: relative">
+  <body style="position: relative; opacity: 0">
+    <canvas
+      id="cursor_canvas"
+      style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 100;
+        pointer-events: none;
+      "
+    ></canvas>
     <div
       id="overlay"
       style="
+        z-index: 10;
         position: absolute;
         top: 0px;
         right: 0px;
         left: 0px;
         bottom: 0px;
-        /* background-color: rgb(0, 0, 0, 0.7); */
+        cursor: none;
+        touch-action: none;
       "
     >
-      <div style="width: 100%; height: 100%; position: relative">
+      <div
+        style="
+          width: 100%;
+          height: 100%;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+        "
+      >
         <img
           id="qmark"
-          src="src/assets/AiFillQuestionCircle.svg"
           style="
             position: absolute;
             opacity: 0;
@@ -35,28 +59,54 @@
             pointer-events: auto;
             transition-property: left top;
             transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
+            transition-duration: 500ms;
           "
         />
         <div
           id="info"
           style="
             display: none;
-            position: absolute;
-            top: max(40px, 10%);
-            left: max(40px, 10%);
-            right: max(40px, 10%);
-            bottom: max(40px, 10%);
+            position: relative;
+            max-height: min(80%, calc(100% - 80px));
+            max-width: min(80%, calc(100% - 80px));
+            margin: auto;
             border-radius: 30px;
+            padding: 20px;
+            text-align: center;
             background-color: rgb(200, 200, 200);
           "
-        ></div>
+        >
+          <div
+            style="
+              position: relative;
+              display: flex;
+              flex-direction: column;
+              touch-action: manipulation;
+              overflow: auto;
+            "
+          >
+            <h1>Welcome to Enlight!</h1>
+            <ul
+              style="text-align: start; margin-left: auto; margin-right: auto"
+            >
+              <li>Double-click the canvas to create a shape.</li>
+              <li>Double-click on a shape to delete it.</li>
+              <li>Click on a shape to select it.</li>
+              <li>Move a selected shape by dragging it.</li>
+              <li>Resize a selected shape by dragging its corners.</li>
+              <li>Click on the canvas to deselect any shapes.</li>
+              <li>Open this panel at any time by clicking '?'.</li>
+              <li>Click anywhere to close this panel.</li>
+            </ul>
+            <h3>
+              Now create some shapes,
+              <br />wander around & enjoy the view!
+            </h3>
+          </div>
+        </div>
       </div>
     </div>
-    <canvas
-      id="canvas"
-      style="background-color: black; cursor: none; touch-action: none"
-    ></canvas>
+    <canvas id="canvas" style="background-color: black"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

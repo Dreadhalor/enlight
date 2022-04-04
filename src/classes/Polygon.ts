@@ -68,7 +68,10 @@ export function createRandomPolygon(center: Point) {
   //this polygon will have a random number of points between min_points and max_points (inclusive)
   //each point will have a random distance from the provided center point between min_distance and max_distance (inclusive)
   //the generated polygon will inevitably not be centered at the provided center point, so we need to move it to the center
-  const min_dimension = Math.min(window.innerWidth, window.innerHeight);
+  const min_dimension = Math.min(
+    document.body.offsetWidth,
+    document.body.offsetHeight
+  );
   const min_points = 3,
     max_points = 5;
   const min_radius = Math.min(50, min_dimension / 12),

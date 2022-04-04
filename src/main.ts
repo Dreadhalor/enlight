@@ -1,3 +1,5 @@
+import 'simple-scrollbar/simple-scrollbar.css';
+
 import { draw, fuzzyRadius } from './draw';
 import {
   getArea,
@@ -17,12 +19,14 @@ import FontFaceObserver from 'fontfaceobserver-es';
 
 const question_mark_size = 36;
 //create a new image with src 'assets/AiFillQuestionCircle.svg'
-const question_mark = new Image();
 let question_mark_location = { x: 0, y: 0 };
-question_mark.src = '/src/assets/AiFillQuestionCircle.svg';
-question_mark.onload = () => {
-  console.log('loaded');
-};
+const question_mark_idle = new Image();
+question_mark_idle.src = '/src/assets/AiFillQuestionCircle.svg';
+const question_mark_mouseover = new Image();
+question_mark_mouseover.src = '/src/assets/AiFillQuestionCircleMouseover.svg';
+const question_mark = new Image();
+//set question_mark.src to question_mark_idle
+question_mark.src = question_mark_idle.src;
 
 export enum State {
   MouseoverMe,
@@ -31,6 +35,8 @@ export enum State {
 }
 
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 const mouse = document.createElement('canvas');
 const ctx_mouse = mouse.getContext('2d')!;
 const mouse_radius = 11;
@@ -42,10 +48,20 @@ ctx_mouse.fill();
 
 const overlay = document.querySelector<HTMLDivElement>('#overlay')!;
 const info = document.querySelector<HTMLDivElement>('#info')!;
+let info_open = false;
 const qmark = document.querySelector<HTMLImageElement>('#qmark')!;
 
-qmark.onclick = (event: any) => {
-  info.style.display = 'block';
+qmark.onclick = (event: MouseEvent) => {
+  info_open = info.style.display === 'none' ? true : false;
+};
+qmark.onpointerover = () => {
+  question_mark.src = '/src/assets/AiFillQuestionCircleMouseover.svg';
+};
+qmark.onpointerup = () => {
+  question_mark.src = '/src/assets/AiFillQuestionCircle.svg';
+};
+qmark.onpointerleave = () => {
+  question_mark.src = '/src/assets/AiFillQuestionCircle.svg';
 };
 
 const font_name = 'Annie Use Your Telescope';
@@ -69,8 +85,8 @@ let borders: Polygon[] = [];
 
 const setBorders = (borders: Polygon[]) => {
   while (borders.pop());
-  let width = window.innerWidth;
-  let height = window.innerHeight;
+  let width = document.body.offsetWidth;
+  let height = document.body.offsetHeight;
   let center = { x: width / 2, y: height / 2 };
   borders.push(
     createRectangle(center, width + 2, height + 2),
@@ -157,14 +173,37 @@ let visible_points: Point[] = [];
 // DRAW LOOP
 function drawLoop() {
   //set the cursor of info to the mouse canvas
-  document.body.style.cursor = `url(${mouse.toDataURL()}) ${mouse_radius} ${mouse_radius}, auto`;
+  // document.body.style.cursor = `url(${mouse.toDataURL()}) ${mouse_radius} ${mouse_radius}, auto`;
 
-  qmark.style.display = state === State.ExploreMe ? 'block' : 'none';
-  if (state === State.ExploreMe) {
-    question_mark_location = { x: canvas.width / 2, y: canvas.height / 2 };
-    qmark.style.left = `${question_mark_location.x - question_mark_size / 2}px`;
-    qmark.style.top = `${question_mark_location.y - question_mark_size / 2}px`;
+  if (info_open) qmark.style.pointerEvents = 'none';
+  else qmark.style.pointerEvents = 'auto';
+  if (
+    info.style.display !== 'none' &&
+    !info_open &&
+    state === State.ExploreMe
+  ) {
+    state = State.FreePlay;
   }
+  info.style.display = info_open ? 'flex' : 'none';
+
+  switch (state) {
+    case State.ExploreMe:
+      question_mark_location = { x: canvas.width / 2, y: canvas.height / 2 };
+      qmark.style.display = 'block';
+      break;
+    case State.FreePlay:
+      question_mark_location = {
+        x: canvas.width - question_mark_size / 2 - 10,
+        y: question_mark_size / 2 + 10,
+      };
+      qmark.style.display = 'block';
+      break;
+    default:
+      qmark.style.display = 'none';
+      break;
+  }
+  qmark.style.left = `${question_mark_location.x - question_mark_size / 2}px`;
+  qmark.style.top = `${question_mark_location.y - question_mark_size / 2}px`;
   let rect = qmark.getBoundingClientRect();
   if (updateCanvas || updateMove) {
     draw(
@@ -173,7 +212,6 @@ function drawLoop() {
       mouseover!,
       visible_points,
       selected_point,
-      polygons,
       `${font_size} ${font_name}`,
       question_mark,
       {
@@ -190,7 +228,10 @@ function drawLoop() {
 window.onload = function () {
   //dont start the draw loop until the font is loaded
   const font_loader = new FontFaceObserver(font_name);
-  font_loader.load().then(() => drawLoop());
+  font_loader.load().then(() => {
+    document.body.style.opacity = '1';
+    drawLoop();
+  });
 };
 
 function chebyshevDistance(a: Point, b: Point) {
@@ -223,6 +264,7 @@ function checkDblClick(event: PointerEvent) {
   return false;
 }
 function click(event: PointerEvent) {
+  if (info_open) info_open = false;
   justDblClicked = false;
   lastClick = {
     x: event.clientX,
@@ -253,7 +295,7 @@ function onDblClick(event: PointerEvent) {
       y: event.clientY,
     });
     polygons.push(random_polygon);
-    selected_polygons = [random_polygon];
+    // selected_polygons = [random_polygon];
     if (state === State.MouseoverMe) state = State.ExploreMe;
   } else selected_polygons = [];
   updateSegments();
@@ -261,19 +303,8 @@ function onDblClick(event: PointerEvent) {
   updateVisiblePoints();
 }
 
-function checkExploreMe(event: PointerEvent) {
-  info.innerHTML = 'hi there';
-
-  // if (
-  //   state === State.ExploreMe &&
-  //   getIntersectingPolygons(event, polygons).length === 0
-  // ) {
-  //   state = State.FreePlay;
-  // }
-}
 function setMouseover(event: PointerEvent | null) {
   if (event) {
-    checkExploreMe(event);
     mouseover = { x: event.clientX, y: event.clientY };
     // if mousedown is not null & the chebyshev distance between mouseover and mousedown is greater than clickRadius, set leftClickRadius to true
     if (mousedown && chebyshevDistance(mousedown, mouseover) > clickRadius) {
@@ -283,7 +314,6 @@ function setMouseover(event: PointerEvent | null) {
 }
 function setMousedown(event: PointerEvent | null) {
   if (event) {
-    checkExploreMe(event);
     mousedown = {
       x: event.clientX,
       y: event.clientY,

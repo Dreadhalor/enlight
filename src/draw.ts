@@ -1,4 +1,3 @@
-import { Polygon } from './classes/Polygon';
 import {
   drawActivePoints,
   drawDebugPoints,
@@ -18,12 +17,15 @@ const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
 const ctx = canvas.getContext('2d')!;
 const background_canvas = document.createElement('canvas');
 const ctx2 = background_canvas.getContext('2d')!;
+const cursor_canvas =
+  document.querySelector<HTMLCanvasElement>('#cursor_canvas')!;
+const ctx_cursor_canvas = cursor_canvas.getContext('2d')!;
 
 export const fuzzyRadius = 10;
 const dots = 10;
 const point_radius = 4;
 const selected_point_radius = 10;
-const draw_light_orb = false;
+const draw_light_orb = true;
 const draw_fuzzy_light_orbs = false;
 const draw_outlines = false;
 const draw_debug_points = false;
@@ -44,43 +46,21 @@ export function draw(
   mouseover: Point,
   points: Point[],
   selected_point: Point | null,
-  polygons: Polygon[],
   font: string,
   question_mark: HTMLImageElement,
   question_mark_location: Point,
   question_mark_size: number
 ) {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.width = document.body.offsetWidth;
+  canvas.height = document.body.offsetHeight;
   background_canvas.width = canvas.width;
   background_canvas.height = canvas.height;
+  cursor_canvas.width = canvas.width;
+  cursor_canvas.height = canvas.height;
   drawBackground(state, font, ctx2);
   canvas.style.backgroundImage = `url(${background_canvas.toDataURL()})`;
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // if (state === State.FreePlay) {
-  //   for (let polygon of polygons) {
-  //     //calculate the middle of the polygon
-  //     let points = polygon.getPoints();
-  //     let center = {
-  //       x: points[0].x,
-  //       y: points[0].y,
-  //     };
-  //     for (let i = 1; i < points.length; i++) {
-  //       center.x += points[i].x;
-  //       center.y += points[i].y;
-  //     }
-  //     center.x /= points.length;
-  //     center.y /= points.length;
-  //     ctx.font = font;
-  //     ctx.fillStyle = 'white';
-  //     ctx.textAlign = 'center';
-  //     ctx.textBaseline = 'middle';
-  //     let message = 'Click me!';
-  //     // ctx.fillText(message, center.x, center.y);
-  //   }
-  // }
 
   if (draw_outlines) drawOutlines(segments, ctx);
 
@@ -113,22 +93,22 @@ export function draw(
       ctx.fillText(
         'Double click me!',
         canvas.width / 2,
-        canvas.height / 2 - 150
+        canvas.height / 2 - 120
       );
       ctx.globalCompositeOperation = 'source-over';
     }
-    if (state === State.ExploreMe) {
+    if (state === State.ExploreMe || state === State.FreePlay) {
       drawQuestionMark(
         question_mark_location,
         mouseover,
         question_mark,
         question_mark_size,
-        state,
         ctx
       );
     }
 
-    if (draw_light_orb) drawLightOrb(mouseover, fuzzyRadius + 1, ctx);
+    if (draw_light_orb)
+      drawLightOrb(mouseover, fuzzyRadius + 1, ctx_cursor_canvas);
     if (draw_fuzzy_light_orbs)
       drawFuzzyLightOrbs(mouseover, dots, fuzzyRadius, ctx);
   }
@@ -153,20 +133,17 @@ function drawQuestionMark(
   mouseover: Point,
   question_mark: HTMLImageElement,
   question_mark_size: number,
-  state: State,
   ctx: CanvasRenderingContext2D
 ) {
-  if (state === State.ExploreMe) {
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.drawImage(
-      question_mark,
-      center.x - question_mark_size / 2,
-      center.y - question_mark_size / 2,
-      question_mark_size,
-      question_mark_size
-    );
-    ctx.globalCompositeOperation = 'source-over';
-  }
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.drawImage(
+    question_mark,
+    center.x - question_mark_size / 2,
+    center.y - question_mark_size / 2,
+    question_mark_size,
+    question_mark_size
+  );
+  ctx.globalCompositeOperation = 'source-over';
 }
 
 function drawBackground(
@@ -181,6 +158,10 @@ function drawBackground(
     ctx.textBaseline = 'middle';
     let message =
       state === State.MouseoverMe ? 'Mouse over me!' : 'Explore me!';
-    ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(
+      message,
+      canvas.width / 2,
+      canvas.height / 2 + (state === State.ExploreMe ? 120 : 0)
+    );
   }
 }
