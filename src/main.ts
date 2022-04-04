@@ -1,5 +1,3 @@
-import 'simple-scrollbar/simple-scrollbar.css';
-
 import { draw, fuzzyRadius } from './draw';
 import {
   getArea,

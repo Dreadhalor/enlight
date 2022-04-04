@@ -17,8 +17,6 @@
     "vite": "^2.9.0"
   },
   "dependencies": {
-    "fontfaceobserver-es": "^3.3.3",
-    "simple-scrollbar": "^0.4.0",
-    "simplebar": "^5.3.6"
+    "fontfaceobserver-es": "^3.3.3"
   }
 }
