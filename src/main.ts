@@ -18,15 +18,22 @@ import {
 import FontFaceObserver from 'fontfaceobserver-es';
 
 const question_mark_size = 36;
-//create a new image with src 'assets/AiFillQuestionCircle.svg'
+const question_mark_idle_url = new URL(
+  '/AiFillQuestionCircle.svg',
+  import.meta.url
+).href;
+const question_mark_mouseover_url = new URL(
+  '/AiFillQuestionCircleMouseover.svg',
+  import.meta.url
+).href;
 let question_mark_location = { x: 0, y: 0 };
 const question_mark_idle = new Image();
-question_mark_idle.src = '/src/assets/AiFillQuestionCircle.svg';
+question_mark_idle.src = question_mark_idle_url;
 const question_mark_mouseover = new Image();
-question_mark_mouseover.src = '/src/assets/AiFillQuestionCircleMouseover.svg';
+question_mark_mouseover.src = question_mark_mouseover_url;
 const question_mark = new Image();
-//set question_mark.src to question_mark_idle
-question_mark.src = question_mark_idle.src;
+
+question_mark.src = question_mark_idle_url;
 
 export enum State {
   MouseoverMe,
@@ -55,13 +62,13 @@ qmark.onclick = () => {
   info_open = info.style.display === 'none' ? true : false;
 };
 qmark.onpointerover = () => {
-  question_mark.src = '/src/assets/AiFillQuestionCircleMouseover.svg';
+  question_mark.src = question_mark_mouseover_url;
 };
 qmark.onpointerup = () => {
-  question_mark.src = '/src/assets/AiFillQuestionCircle.svg';
+  question_mark.src = question_mark_idle_url;
 };
 qmark.onpointerleave = () => {
-  question_mark.src = '/src/assets/AiFillQuestionCircle.svg';
+  question_mark.src = question_mark_idle_url;
 };
 
 const font_name = 'Annie Use Your Telescope';
