@@ -145,3 +145,13 @@ export function getArea(polygon: Polygon) {
   area /= 2;
   return area;
 }
+
+//create a function which returns the length of a line segment
+export function getLength(segment?: Segment) {
+  if (!segment) return 0;
+  let x1 = segment.a.x;
+  let y1 = segment.a.y;
+  let x2 = segment.b.x;
+  let y2 = segment.b.y;
+  return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}

@@ -106,3 +106,16 @@ export function createRandomPolygon(center: Point) {
 
   return new Polygon(points);
 }
+
+export function getCenter(polygon?: Polygon) {
+  if (!polygon) return { x: 0, y: 0 };
+  let center = { x: 0, y: 0 };
+  let points = polygon.getPoints();
+  for (let i = 0; i < points.length; i++) {
+    center.x += points[i].x;
+    center.y += points[i].y;
+  }
+  center.x /= points.length;
+  center.y /= points.length;
+  return center;
+}

@@ -1,6 +1,7 @@
 import { draw, fuzzyRadius } from './draw';
 import {
   getArea,
+  getLength,
   isPointInPolygon,
   isPointInRadius,
   subdivideAll,
@@ -11,6 +12,7 @@ import {
   Polygon,
   createRectangle,
   createRandomPolygon,
+  getCenter,
 } from './classes/Polygon';
 // import polygon_data from './polygons';
 import FontFaceObserver from 'fontfaceobserver-es';
@@ -40,8 +42,8 @@ export enum State {
 }
 
 const canvas = document.querySelector<HTMLCanvasElement>('#canvas')!;
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = document.body.offsetWidth;
+canvas.height = document.body.offsetHeight;
 const mouse = document.createElement('canvas');
 const ctx_mouse = mouse.getContext('2d')!;
 const mouse_radius = 11;
@@ -87,17 +89,43 @@ let updateCanvas = true;
 let updateMove = true;
 
 let borders: Polygon[] = [];
+const border_margin = 2;
 
 const setBorders = (borders: Polygon[]) => {
   while (borders.pop());
-  let width = document.body.offsetWidth;
-  let height = document.body.offsetHeight;
+  let width = canvas.width;
+  let height = canvas.height;
+  console.log('borders, canvas size: ', width, height);
   let center = { x: width / 2, y: height / 2 };
   borders.push(
-    createRectangle(center, width + 2, height + 2),
+    createRectangle(center, width + border_margin, height + border_margin),
     createRectangle(center, width + fuzzyRadius * 4, height + fuzzyRadius * 4)
   );
   updateMove = true;
+};
+
+let prev_canvas_dimensions = { width: 0, height: 0 };
+const checkBorders = () => {
+  let width = canvas.width;
+  let height = canvas.height;
+  if (
+    prev_canvas_dimensions.width !== width ||
+    prev_canvas_dimensions.height !== height
+  ) {
+    updateMove = true;
+  }
+  prev_canvas_dimensions = { width, height };
+};
+const getBorders = () => {
+  checkBorders();
+  let width = canvas.width;
+  let height = canvas.height;
+  let center = { x: width / 2, y: height / 2 };
+  let result = [
+    createRectangle(center, width + border_margin, height + border_margin),
+    createRectangle(center, width + fuzzyRadius * 4, height + fuzzyRadius * 4),
+  ];
+  return result;
 };
 
 setBorders(borders);
@@ -145,7 +173,10 @@ function calculateSegments(
   return result;
 }
 function getBorderSegments() {
-  return borders.map((border) => border.getSegments()).flat(1);
+  // return borders.map((border) => border.getSegments()).flat(1);
+  return getBorders()
+    .map((border) => border.getSegments())
+    .flat(1);
 }
 
 function setSelectedPolygons(event: PointerEvent) {
@@ -177,6 +208,11 @@ let visible_points: Point[] = [];
 
 // DRAW LOOP
 function drawLoop() {
+  checkBorders();
+  if (updateMove) {
+    updateSegments();
+    updateMove = false;
+  }
   //set the cursor of info to the mouse canvas
   // document.body.style.cursor = `url(${mouse.toDataURL()}) ${mouse_radius} ${mouse_radius}, auto`;
 
@@ -226,7 +262,7 @@ function drawLoop() {
       question_mark_size
     );
     updateCanvas = true;
-    updateMove = false;
+    // updateMove = false;
   }
   requestAnimationFrame(drawLoop);
 }
