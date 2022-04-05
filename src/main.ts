@@ -93,7 +93,6 @@ const setBorders = (borders: Polygon[]) => {
   while (borders.pop());
   let width = canvas.width;
   let height = canvas.height;
-  console.log('borders, canvas size: ', width, height);
   let center = { x: width / 2, y: height / 2 };
   borders.push(
     createRectangle(center, width + border_margin, height + border_margin),
@@ -114,19 +113,19 @@ const checkBorders = () => {
   }
   prev_canvas_dimensions = { width, height };
 };
-const getBorders = () => {
-  checkBorders();
-  let width = canvas.width;
-  let height = canvas.height;
-  let center = { x: width / 2, y: height / 2 };
-  let result = [
-    createRectangle(center, width + border_margin, height + border_margin),
-    createRectangle(center, width + fuzzyRadius * 4, height + fuzzyRadius * 4),
-  ];
-  return result;
-};
+// const getBorders = () => {
+//   checkBorders();
+//   let width = canvas.width;
+//   let height = canvas.height;
+//   let center = { x: width / 2, y: height / 2 };
+//   let result = [
+//     createRectangle(center, width + border_margin, height + border_margin),
+//     createRectangle(center, width + fuzzyRadius * 4, height + fuzzyRadius * 4),
+//   ];
+//   return result;
+// };
 
-setBorders(borders);
+// setBorders(borders);
 
 const polygons: Polygon[] = [
   // createSquare({ x: 400, y: 300 }, 100),
@@ -171,10 +170,10 @@ function calculateSegments(
   return result;
 }
 function getBorderSegments() {
-  // return borders.map((border) => border.getSegments()).flat(1);
-  return getBorders()
-    .map((border) => border.getSegments())
-    .flat(1);
+  return borders.map((border) => border.getSegments()).flat(1);
+  // return getBorders()
+  //   .map((border) => border.getSegments())
+  //   .flat(1);
 }
 
 function setSelectedPolygons(event: PointerEvent) {
@@ -375,9 +374,10 @@ function getMovement(): [number, number] {
   return [mouseover.x - mousedown?.x, mouseover.y - mousedown!.y];
 }
 
-updateSegments();
+// updateSegments();
 //define updateSegments()
 function updateSegments() {
+  setBorders(borders);
   physics_segments = calculateSegments(getBorderSegments(), polygons, segments);
 }
 
