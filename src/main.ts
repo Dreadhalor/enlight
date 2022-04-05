@@ -1,7 +1,6 @@
 import { draw, fuzzyRadius } from './draw';
 import {
   getArea,
-  getLength,
   isPointInPolygon,
   isPointInRadius,
   subdivideAll,
@@ -12,7 +11,6 @@ import {
   Polygon,
   createRectangle,
   createRandomPolygon,
-  getCenter,
 } from './classes/Polygon';
 // import polygon_data from './polygons';
 import FontFaceObserver from 'fontfaceobserver-es';
