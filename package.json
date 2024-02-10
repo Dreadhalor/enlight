@@ -12,9 +12,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "gh-pages": "^3.2.3",
-    "typescript": "^4.5.4",
-    "vite": "^2.9.0"
+    "gh-pages": "^5.0.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.1"
   },
   "dependencies": {
     "fontfaceobserver-es": "^3.3.3"
